@@ -2,7 +2,6 @@
 #include "draw.h"
 #include "logging.h"
 #include "math_utils.h"
-#include "mkb/mkb2_ghidra.h"
 #include "pad.h"
 
 namespace slider {

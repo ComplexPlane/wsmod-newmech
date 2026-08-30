@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mkb/mkb.h"
+#include "vector.h"
 
 namespace custompack::stageconf {
 
@@ -18,8 +19,7 @@ struct Thing {
 };
 
 struct ItemGroup {
-    Thing* things;
-    u32 thing_count;
+    Vector<Thing> things;
 };
 
 struct StageConf {

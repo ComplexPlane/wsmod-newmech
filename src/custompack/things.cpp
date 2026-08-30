@@ -9,6 +9,8 @@
 
 using namespace mathutils;
 
+namespace custompack::things {
+
 namespace {
 
 constexpr f32 HITBOX_RADIUS = 0.6f;
@@ -18,7 +20,7 @@ enum ThingFlags {
 };
 
 struct ThingInst {
-    custompack::stageconf::Thing* conf;
+    stageconf::Thing* conf;
     u8 flags;
     u16 itemgroup_idx;
 };
@@ -150,8 +152,6 @@ void collide_things() {
 }
 
 }  // namespace
-
-namespace custompack::things {
 
 void on_after_load_stagedef() {
     // This really only needs to run after common gma/tpl are loaded aka heaps reset

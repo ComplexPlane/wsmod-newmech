@@ -12,12 +12,12 @@ class Arena {
     void* alloc_remaining_bytes(u32 align, u32* out_size);
 
     template <typename T>
-    T* alloc() {
+    T* alloc_struct() {
         return static_cast<T*>(alloc_bytes(sizeof(T), alignof(T)));
     }
 
     template <typename T>
-    T* alloc(u32 elem_count) {
+    T* alloc_array(u32 elem_count) {
         return static_cast<T*>(alloc_bytes(sizeof(T) * elem_count, alignof(T)));
     }
 
