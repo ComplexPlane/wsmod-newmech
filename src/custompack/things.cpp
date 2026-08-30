@@ -13,6 +13,10 @@ namespace {
 
 constexpr f32 HITBOX_RADIUS = 0.6f;
 
+enum ThingFlags {
+    ThingFlag_Collided = 1 << 0,
+};
+
 struct ThingInst {
     custompack::stageconf::Thing* conf;
     u8 flags;
@@ -71,13 +75,13 @@ void draw_shadow_req(ShadowReq* shadow) {
     mkb::avdisp_set_z_mode(mkb::GX_TRUE, mkb::GX_LEQUAL, mkb::GX_TRUE);
 }
 
-void draw_thing_shadow(ThingInst& thing, f32 thing_alpha) {
+void draw_thing_shadow(ThingInst* thing, f32 thing_alpha) {
     f32 scale = slider::get("shadow scale", 0.55, 0.05);
     f32 base_alpha = slider::get("shadow alpha", 0.40, 0.05);
     f32 min_shadow_dist = slider::get("min sdw dist", 50);
     f32 max_shadow_dist = slider::get("max sdw dist", 60);
 
-    Vec pos_rt_world = pos_world_from_ig(thing.conf->pos, thing.itemgroup_idx);
+    Vec pos_rt_world = pos_world_from_ig(thing->conf->pos, thing->itemgroup_idx);
     f32 dist = get_camera_distance(pos_rt_world);
     if (dist > 0 && dist < max_shadow_dist) {
         mkb::RaycastHit raycast = {};
@@ -98,15 +102,15 @@ void draw_thing_shadow(ThingInst& thing, f32 thing_alpha) {
     }
 }
 
-void draw_base(ThingInst& thing, s16 rot, f32 alpha) {
+void draw_base(ThingInst* thing, s16 rot, f32 alpha) {
     mkb::mtxa_from_mtxb();
-    if (thing.itemgroup_idx > 0) {
-        mkb::mtxa_mult_right(&mkb::itemgroups[thing.itemgroup_idx].transform);
+    if (thing->itemgroup_idx > 0) {
+        mkb::mtxa_mult_right(&mkb::itemgroups[thing->itemgroup_idx].transform);
     }
-    mkb::mtxa_translate(&thing.conf->pos);
-    mkb::mtxa_rotate_z(thing.conf->rot.z);
-    mkb::mtxa_rotate_y(thing.conf->rot.y);
-    mkb::mtxa_rotate_x(thing.conf->rot.x);
+    mkb::mtxa_translate(&thing->conf->pos);
+    mkb::mtxa_rotate_z(thing->conf->rot.z);
+    mkb::mtxa_rotate_y(thing->conf->rot.y);
+    mkb::mtxa_rotate_x(thing->conf->rot.x);
     mkb::mtxa_rotate_y(rot);
     mkb::load_gx_pos_nrm_mtx(mkb::mtxa, 0);
 
@@ -114,7 +118,7 @@ void draw_base(ThingInst& thing, s16 rot, f32 alpha) {
     mkb::avdisp_draw_model_culled_sort_auto(s_thing_model);
 }
 
-void draw_thing(ThingInst& thing, s16 rot) {
+void draw_thing(ThingInst* thing, s16 rot) {
     constexpr f32 ALPHA = 1.f;
     draw_base(thing, rot, ALPHA);
     draw_thing_shadow(thing, ALPHA);
@@ -126,20 +130,21 @@ void collide_things() {
         // things that _should_ activate. This is O(n^2) if many things are contacted at
         // the same time but otherwise OK
 
-        ThingInst& thing = s_things[i];
+        ThingInst* thing = &s_things[i];
 
-        Vec thing_pos = thing.conf->pos;
-        if (thing.itemgroup_idx > 0) {
-            mkb::mtxa_from_mtx(&mkb::itemgroups[thing.itemgroup_idx].transform);
+        Vec thing_pos = thing->conf->pos;
+        if (thing->itemgroup_idx > 0) {
+            mkb::mtxa_from_mtx(&mkb::itemgroups[thing->itemgroup_idx].transform);
             mkb::mtxa_tf_point(&thing_pos, &thing_pos);
         }
 
-        mkb::Ball& ball = mkb::balls[mkb::curr_player_idx];
-        f32 dist_sq = vec_dist_sq(ball.pos, thing_pos);
-        f32 radii_sum = ball.physical_ball_radius + HITBOX_RADIUS;
+        mkb::Ball* ball = &mkb::balls[mkb::curr_player_idx];
+        f32 dist_sq = vec_dist_sq(ball->pos, thing_pos);
+        f32 radii_sum = ball->physical_ball_radius + HITBOX_RADIUS;
 
         if (dist_sq < radii_sum * radii_sum) {
             // Respond to collision
+            thing->flags |= ThingFlag_Collided;
         }
     }
 }
@@ -157,18 +162,16 @@ void tick() {
 }
 
 void stobj_init() {
-    s_things = nullptr;
-    s_thing_count = 0;
-
     // Allocate array of thing instances on stage arena iteratively
+    namespace stageconf = custompack::stageconf;
     s_things = static_cast<ThingInst*>(mem::gameplay_arena.get_pos());
     s_thing_count = 0;
-    for (u32 itemgroup_idx = 0; itemgroup_idx < custompack::stageconf::conf->itemgroup_count;
-         itemgroup_idx++) {
-        auto& ig_conf = custompack::stageconf::conf->itemgroups[itemgroup_idx];
-        for (u32 thing_idx = 0; thing_idx < ig_conf.thing_count; thing_idx++) {
-            auto thing_inst = mem::gameplay_arena.alloc<ThingInst>();
-            thing_inst->conf = &ig_conf.things[thing_idx];
+    for (u32 itemgroup_idx = 0; itemgroup_idx < stageconf::conf->itemgroup_count; itemgroup_idx++) {
+        stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[itemgroup_idx];
+
+        for (u32 thing_idx = 0; thing_idx < ig_conf->thing_count; thing_idx++) {
+            ThingInst* thing_inst = mem::gameplay_arena.alloc<ThingInst>();
+            thing_inst->conf = &ig_conf->things[thing_idx];
             thing_inst->itemgroup_idx = itemgroup_idx;
 
             s_thing_count++;
@@ -182,7 +185,7 @@ void stobj_tick() {
 
 void draw_stage() {
     for (u32 i = 0; i < s_thing_count; i++) {
-        draw_thing(s_things[i], 0);
+        draw_thing(&s_things[i], 0);
     }
 }
 
@@ -190,7 +193,7 @@ void draw_view_stage() {
     for (u32 i = 0; i < s_thing_count; i++) {
         ThingInst thing = s_things[i];
         thing.flags = 0;
-        draw_thing(thing, 0);
+        draw_thing(&thing, 0);
     }
 }
 
