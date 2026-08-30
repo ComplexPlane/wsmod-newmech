@@ -2,6 +2,14 @@
 
 #include "arena.h"
 #include "logging.h"
+#include "mkb/mkb.h"
+
+// Returns:
+// -1 if a < b
+//  1 if a > b
+//  0 if a == b
+template <typename T>
+using SortFunc = int (*)(const T* a, const T* b);
 
 template <typename T>
 class Vector {
@@ -39,6 +47,14 @@ class Vector {
 
     T* data() {
         return m_elems;
+    }
+
+    void clear() {
+        mkb::memset(m_elems, 0, m_count * sizeof(T));
+    }
+
+    void sort(SortFunc<T> sort_func) {
+        mkb::qsort(m_elems, m_count, sizeof(T), sort_func);
     }
 
  private:
