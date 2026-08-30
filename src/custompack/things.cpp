@@ -162,19 +162,25 @@ void tick() {
 }
 
 void stobj_init() {
-    // Allocate array of thing instances on stage arena iteratively
-    namespace stageconf = custompack::stageconf;
-    s_things = static_cast<ThingInst*>(mem::gameplay_arena.get_pos());
+    // Preallocate Things array
     s_thing_count = 0;
-    for (u32 itemgroup_idx = 0; itemgroup_idx < stageconf::conf->itemgroup_count; itemgroup_idx++) {
-        stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[itemgroup_idx];
+    for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroup_count; ig_idx++) {
+        stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[ig_idx];
+        s_thing_count += ig_conf->thing_count;
+    }
+    s_things = mem::gameplay_arena.alloc_array<ThingInst>(s_thing_count);
 
-        for (u32 thing_idx = 0; thing_idx < ig_conf->thing_count; thing_idx++) {
-            ThingInst* thing_inst = mem::gameplay_arena.alloc<ThingInst>();
-            thing_inst->conf = &ig_conf->things[thing_idx];
-            thing_inst->itemgroup_idx = itemgroup_idx;
+    // Initialize Things array
+    u32 thing_idx = 0;
+    for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroup_count; ig_idx++) {
+        stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[ig_idx];
 
-            s_thing_count++;
+        for (u32 i = 0; i < ig_conf->thing_count; i++) {
+            stageconf::Thing* thing_conf = &ig_conf->things[i];
+            s_things[thing_idx].conf = thing_conf;
+            s_things[thing_idx].itemgroup_idx = ig_idx;
+
+            thing_idx++;
         }
     }
 }

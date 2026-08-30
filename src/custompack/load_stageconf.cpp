@@ -21,7 +21,7 @@ const char* THING_TYPES[] = {
 void parse_things(sj_Reader* reader, u32 itemgroup_idx, sj_Value things_json) {
     custompack::stageconf::ItemGroup* itemgroup = &custompack::stageconf::conf->itemgroups[itemgroup_idx];
     itemgroup->thing_count = json::parse_array_len(*reader, things_json);
-    itemgroup->things = mem::stage_arena.alloc<custompack::stageconf::Thing>(itemgroup->thing_count);
+    itemgroup->things = mem::stage_arena.alloc_array<custompack::stageconf::Thing>(itemgroup->thing_count);
 
     u32 thing_idx = 0;
     sj_Value thing_json = {};
@@ -77,10 +77,10 @@ sj_Value parse_itemgroups_field(sj_Reader* reader) {
 }
 
 void load_stageconf() {
-    auto conf = mem::stage_arena.alloc<custompack::stageconf::StageConf>();
+    auto conf = mem::stage_arena.alloc_struct<custompack::stageconf::StageConf>();
     custompack::stageconf::conf = conf;
     conf->itemgroups =
-        mem::stage_arena.alloc<custompack::stageconf::ItemGroup>(mkb::stagedef->coli_header_count);
+        mem::stage_arena.alloc_array<custompack::stageconf::ItemGroup>(mkb::stagedef->coli_header_count);
     conf->itemgroup_count = mkb::stagedef->coli_header_count;
 
     char stageconf_path[32] = {};
