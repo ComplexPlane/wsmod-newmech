@@ -37,8 +37,18 @@ class Vector {
         return m_count;
     }
 
+    T* data() {
+        return m_elems;
+    }
+
  private:
     T* m_elems;
     u32 m_capacity;
     u32 m_count;
+};
+
+template <typename T>
+struct Optional {
+    T opt;
+    bool present;
 };
