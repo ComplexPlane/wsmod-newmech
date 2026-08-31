@@ -17,6 +17,8 @@ template <typename T>
 class Vector {
  public:
     Vector() = default;
+    constexpr Vector(T* ptr, u32 max_elems) : m_elems{ptr}, m_capacity{max_elems}, m_count{0} {
+    }
     Vector(const Vector&) = delete;
     Vector(Vector&&) = delete;
 
@@ -24,6 +26,12 @@ class Vector {
         m_count = 0;
         m_capacity = max_elems;
         m_elems = arena->alloc_array<T>(max_elems);
+    }
+
+    void alloc(T* ptr, u32 max_elems) {
+        m_count = 0;
+        m_elems = ptr;
+        m_capacity = max_elems;
     }
 
     T& operator[](u32 idx) {
@@ -67,9 +75,9 @@ class Vector {
     }
 
  private:
-    T* m_elems;
-    u32 m_capacity;
-    u32 m_count;
+    T* m_elems = nullptr;
+    u32 m_capacity = 0;
+    u32 m_count = 0;
 };
 
 template <typename T>
