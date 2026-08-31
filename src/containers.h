@@ -4,7 +4,7 @@
 #include "logging.h"
 #include "mkb/mkb.h"
 
-namespace containers {
+namespace cnt {
 
 // Returns:
 // -1 if a < b
@@ -35,6 +35,13 @@ class Vector {
         ASSERT(m_count < m_capacity);
         m_elems[m_count] = elem;
         m_count++;
+    }
+
+    T* push_zeroed() {
+        ASSERT(m_count < m_capacity);
+        T* ret = &m_elems[m_count];
+        m_count++;
+        return ret;
     }
 
     void pop() {
@@ -84,4 +91,4 @@ Option<T> none() {
     return opt;
 }
 
-}  // namespace containers
+}  // namespace cnt

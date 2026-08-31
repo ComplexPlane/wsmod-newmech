@@ -31,8 +31,7 @@ struct ShadowReq {
     f32 alpha;
 };
 
-ThingInst* s_things = nullptr;
-u32 s_thing_count = 0;
+cnt::Vector<ThingInst> s_things;
 mkb::GmaModel* s_thing_model = nullptr;
 
 Vec pos_world_from_ig(Vec pos, u32 itemgroup_idx) {
@@ -125,7 +124,7 @@ void draw_thing(ThingInst* thing, s16 rot) {
 }
 
 void collide_things() {
-    for (u32 i = 0; i < s_thing_count; i++) {
+    for (u32 i = 0; i < s_things.count(); i++) {
         // Collision pass: iterate over all things checking for collision, and mark all
         // things that _should_ activate. This is O(n^2) if many things are contacted at
         // the same time but otherwise OK
@@ -162,25 +161,24 @@ void tick() {
 }
 
 void stobj_init() {
-    // Preallocate Things array
-    s_thing_count = 0;
-    for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroup_count; ig_idx++) {
+    // Preallocate Things vector
+    u32 thing_count = 0;
+    for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroups.count(); ig_idx++) {
         stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[ig_idx];
-        s_thing_count += ig_conf->thing_count;
+        thing_count += ig_conf->things.count();
     }
-    s_things = mem::gameplay_arena.alloc_array<ThingInst>(s_thing_count);
+    s_things.alloc(&mem::gameplay_arena, thing_count);
 
-    // Initialize Things array
-    u32 thing_idx = 0;
-    for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroup_count; ig_idx++) {
+    // Populate Things vector
+    for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroups.count(); ig_idx++) {
         stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[ig_idx];
 
-        for (u32 i = 0; i < ig_conf->thing_count; i++) {
+        for (u32 i = 0; i < ig_conf->things.count(); i++) {
             stageconf::Thing* thing_conf = &ig_conf->things[i];
-            s_things[thing_idx].conf = thing_conf;
-            s_things[thing_idx].itemgroup_idx = ig_idx;
 
-            thing_idx++;
+            ThingInst* thing = s_things.push_zeroed();
+            thing->conf = thing_conf;
+            thing->itemgroup_idx = ig_idx;
         }
     }
 }
@@ -190,13 +188,13 @@ void stobj_tick() {
 }
 
 void draw_stage() {
-    for (u32 i = 0; i < s_thing_count; i++) {
+    for (u32 i = 0; i < s_things.count(); i++) {
         draw_thing(&s_things[i], 0);
     }
 }
 
 void draw_view_stage() {
-    for (u32 i = 0; i < s_thing_count; i++) {
+    for (u32 i = 0; i < s_things.count(); i++) {
         ThingInst thing = s_things[i];
         thing.flags = 0;
         draw_thing(&thing, 0);

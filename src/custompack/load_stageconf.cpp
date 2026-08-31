@@ -19,9 +19,10 @@ const char* THING_TYPES[] = {
 };
 
 void parse_things(sj_Reader* reader, u32 itemgroup_idx, sj_Value things_json) {
-    custompack::stageconf::ItemGroup* itemgroup = &custompack::stageconf::conf->itemgroups[itemgroup_idx];
-    itemgroup->thing_count = json::parse_array_len(*reader, things_json);
-    itemgroup->things = mem::stage_arena.alloc_array<custompack::stageconf::Thing>(itemgroup->thing_count);
+    custompack::stageconf::ItemGroup* itemgroup =
+        &custompack::stageconf::conf->itemgroups[itemgroup_idx];
+    u32 thing_count = json::parse_array_len(*reader, things_json);
+    itemgroup->things.alloc(&mem::stage_arena, thing_count);
 
     u32 thing_idx = 0;
     sj_Value thing_json = {};
@@ -36,7 +37,7 @@ void parse_things(sj_Reader* reader, u32 itemgroup_idx, sj_Value things_json) {
                 thing->rot = json::parse_rot(reader, value);
             } else if (json::eq(key, "type")) {
                 thing->type = (custompack::stageconf::ThingType)json::parse_enum(value, THING_TYPES,
-                                                                           LEN(THING_TYPES));
+                                                                                 LEN(THING_TYPES));
             }
         }
 
@@ -79,9 +80,7 @@ sj_Value parse_itemgroups_field(sj_Reader* reader) {
 void load_stageconf() {
     auto conf = mem::stage_arena.alloc_struct<custompack::stageconf::StageConf>();
     custompack::stageconf::conf = conf;
-    conf->itemgroups =
-        mem::stage_arena.alloc_array<custompack::stageconf::ItemGroup>(mkb::stagedef->coli_header_count);
-    conf->itemgroup_count = mkb::stagedef->coli_header_count;
+    conf->itemgroups.alloc(&mem::stage_arena, mkb::stagedef->coli_header_count);
 
     char stageconf_path[32] = {};
     // DVD current dir is "stage"

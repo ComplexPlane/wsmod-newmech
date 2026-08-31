@@ -1,5 +1,6 @@
 #pragma once
 
+#include "containers.h"
 #include "mkb/mkb.h"
 
 namespace custompack::stageconf {
@@ -18,13 +19,11 @@ struct Thing {
 };
 
 struct ItemGroup {
-    Thing* things;
-    u32 thing_count;
+    cnt::Vector<Thing> things;
 };
 
 struct StageConf {
-    ItemGroup* itemgroups;
-    u32 itemgroup_count;
+    cnt::Vector<ItemGroup> itemgroups;
 };
 
 // Stageconf loaded after stagedef loads, freed when unloading stage
