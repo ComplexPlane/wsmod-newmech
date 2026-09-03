@@ -15,13 +15,13 @@ namespace custompack::models {
 
 void load_custompack_common_gma() {
     mkb::TplBuffer* tpl = mkb::g_load_tpl("/init/custompack_objects.tpl");
+    ASSERT(tpl != nullptr);
     s_custompack_objects_gma = mkb::g_load_gma("/init/custompack_objects.gma", tpl);
-    // Will be freed when game heap is destroyed
+    ASSERT(s_custompack_objects_gma != nullptr);
 }
 
 mkb::GmaModel* find(const char* name) {
     ASSERT(s_custompack_objects_gma != nullptr);
-
     if (s_custompack_objects_gma == nullptr) return nullptr;
     for (int i = 0; i < s_custompack_objects_gma->model_count; i++) {
         const char* curr_name = s_custompack_objects_gma->model_entries[i].name;
@@ -29,7 +29,7 @@ mkb::GmaModel* find(const char* name) {
             return s_custompack_objects_gma->model_entries[i].model;
         }
     }
-    return nullptr;
+    ABORT_MSG("Model '%s' not found", name);
 }
 
 }  // namespace custompack::models

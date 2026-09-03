@@ -2,6 +2,7 @@
 
 #include "assembly.h"
 #include "cardio.h"
+#include "load_gameconf.h"
 #include "mem.h"
 #include "modlink.h"
 #include "pad.h"
@@ -167,6 +168,7 @@ void init() {
 
     // Do all wsmod arena-related loading
     cardio::init(&mem::wsmod_arena);
+    gameconf::load(&mem::wsmod_arena);
 
     // Called only after wsmod arena is populated
     mem::init_chainload_heap();
