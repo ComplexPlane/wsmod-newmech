@@ -19,11 +19,11 @@ struct Thing {
 };
 
 struct ItemGroup {
-    cnt::Vector<Thing> things;
+    cnt::Array<Thing> things;
 };
 
 struct StageConf {
-    cnt::Vector<ItemGroup> itemgroups;
+    cnt::Array<ItemGroup> itemgroups;
 };
 
 // Stageconf loaded after stagedef loads, freed when unloading stage

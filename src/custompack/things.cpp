@@ -31,7 +31,7 @@ struct ShadowReq {
     f32 alpha;
 };
 
-cnt::Vector<ThingInst> s_things;
+cnt::Array<ThingInst> s_things;
 mkb::GmaModel* s_thing_model = nullptr;
 
 Vec pos_world_from_ig(Vec pos, u32 itemgroup_idx) {
@@ -167,20 +167,21 @@ void stobj_init() {
         stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[ig_idx];
         thing_count += ig_conf->things.count();
     }
-    s_things.alloc(&mem::gameplay_arena, thing_count);
 
     // Populate Things vector
+    cnt::Vector<ThingInst> things(&mem::gameplay_arena, thing_count);
     for (u32 ig_idx = 0; ig_idx < stageconf::conf->itemgroups.count(); ig_idx++) {
         stageconf::ItemGroup* ig_conf = &stageconf::conf->itemgroups[ig_idx];
 
         for (u32 i = 0; i < ig_conf->things.count(); i++) {
             stageconf::Thing* thing_conf = &ig_conf->things[i];
 
-            ThingInst* thing = s_things.push_zeroed();
+            ThingInst* thing = things.push_zeroed();
             thing->conf = thing_conf;
             thing->itemgroup_idx = ig_idx;
         }
     }
+    s_things = things.as_array();
 }
 
 void stobj_tick() {
