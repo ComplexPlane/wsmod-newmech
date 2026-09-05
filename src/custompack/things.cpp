@@ -198,7 +198,7 @@ void draw_view_stage() {
     for (u32 i = 0; i < s_things.count(); i++) {
         ThingInst thing = s_things[i];
         thing.flags = 0;
-        draw_thing(&thing, 0);
+        draw_thing(&thing, mkb::view_stage_timer);
     }
 }
 
