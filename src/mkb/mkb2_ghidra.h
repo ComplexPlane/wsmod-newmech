@@ -310,8 +310,8 @@ struct GmaModel { /* Also known as a GCMF (GameCube Model Format?) */
     struct Vec bound_sphere_center; /* Also the center of the bounding sphere */
     float bound_sphere_radius;
     u16 tev_layer_count;
-    u16 opaque_shape_count;
-    u16 translucent_shape_count;
+    u16 opaque_mesh_count;
+    u16 translucent_mesh_count;
     s8 mtx_count;
     undefined field_0x1f[0x1];
     s32 header_size; /* Memory size of this structure in bytes, including texture description array and transform matrices. */
@@ -1761,6 +1761,73 @@ struct CmPlayerProgress { /* Seems to be one of these per player, not sure what 
 } __attribute__((__packed__));
 static_assert(sizeof(CmPlayerProgress) == 0x24);
 
+typedef struct TevBuildState TevBuildState, *PTevBuildState;
+
+enum {
+    GX_TEVSTAGE0=0,
+    GX_TEVSTAGE1=1,
+    GX_TEVSTAGE2=2,
+    GX_TEVSTAGE3=3,
+    GX_TEVSTAGE4=4,
+    GX_TEVSTAGE5=5,
+    GX_TEVSTAGE6=6,
+    GX_TEVSTAGE7=7,
+    GX_TEVSTAGE8=8,
+    GX_TEVSTAGE9=9,
+    GX_TEVSTAGE10=10,
+    GX_TEVSTAGE11=11,
+    GX_TEVSTAGE12=12,
+    GX_TEVSTAGE13=13,
+    GX_TEVSTAGE14=14,
+    GX_TEVSTAGE15=15,
+    GX_MAX_TEVSTAGE=16
+};
+typedef undefined4 GXTevStageID;
+
+enum {
+    GX_TEXMTX0=30,
+    GX_TEXMTX1=33,
+    GX_TEXMTX2=36,
+    GX_TEXMTX3=39,
+    GX_TEXMTX4=42,
+    GX_TEXMTX5=45,
+    GX_TEXMTX6=48,
+    GX_TEXMTX7=51,
+    GX_TEXMTX8=54,
+    GX_TEXMTX9=57,
+    GX_IDENTITY=60
+};
+typedef undefined4 GXTexMtx;
+
+enum {
+    GX_ITM_OFF=0,
+    GX_ITM_0=1,
+    GX_ITM_1=2,
+    GX_ITM_2=3,
+    GX_ITM_S0=5,
+    GX_ITM_S1=6,
+    GX_ITM_S2=7,
+    GX_ITM_T0=9,
+    GX_ITM_T1=10,
+    GX_ITM_T2=11
+};
+typedef undefined4 GXIndTexMtxID;
+
+struct TevBuildState {
+    GXTevStageID  tev_stage;
+    u32 tex_coord_gen;
+    GXTexMtx  tex_mtx;
+    undefined4 tex_map;
+    GXTevStageID  indirect_tev_stage;
+    undefined4 g_indirect_tex_coord_gen;
+    undefined4 field6_0x18;
+    GXIndTexMtxID  indirect_tex_mtx;
+    undefined4 field8_0x20;
+    undefined4 field9_0x24;
+    undefined4 field10_0x28;
+} __attribute__((__packed__));
+static_assert(sizeof(TevBuildState) == 0x2c);
+
 enum { /* These are normally just #defines in the SDK's PAD library. Also these are supposed to be signed */
     PAD_ERR_NONE=0,
     PAD_ERR_TRANSFER=253,
@@ -2372,6 +2439,93 @@ struct FontDefinition {
     float field23_0x34;
 } __attribute__((__packed__));
 static_assert(sizeof(FontDefinition) == 0x38);
+
+typedef struct TevBuildCtx TevBuildCtx, *PTevBuildCtx;
+
+typedef struct GmaMesh GmaMesh, *PGmaMesh;
+
+typedef struct GmaTevLayer GmaTevLayer, *PGmaTevLayer;
+
+enum {
+    TEXFLAG_UNK_BIT0=1,
+    TEXFLAG_UNK_BIT1=2,
+    TEXFLAG_REPEAT_U=4,
+    TEXFLAG_MIRROR_U=8,
+    TEXFLAG_REPEAT_V=16,
+    TEXFLAG_MIRROR_V=32,
+    TEXFLAG_UNK_BIT6=64,
+    TEXFLAG_UNK_BIT7=128,
+    TEXFLAG_ENABLE_MIPMAPS=256,
+    TEXFLAG_UNK_BIT9=512,
+    TEXFLAG_UNK_BIT10=1024,
+    TEXFLAG_G_NEAR=2048,
+    TEXFLAG_G_HEIGHTMAP_BLEND_GRAYSCALE=4096,
+    TEXFLAG_G_ALPHA_MASK=8192,
+    TEXFLAG_UNK_BIT14=16384,
+    TEXFLAG_UNK_BIT15=32768,
+    TEXFLAG_UNK_BIT16=65536,
+    TEXFLAG_ENABLE_UV_SCROLL=131072,
+    TEXFLAG_UNK_BIT18=262144,
+    TEXFLAG_UNK_BIT19=524288,
+    TEXFLAG_UNK_BIT20=1048576,
+    TEXFLAG_UNK_BIT21=2097152,
+    TEXFLAG_UNK_BIT22=4194304,
+    TEXFLAG_UNK_BIT23=8388608
+};
+typedef undefined4 GmaTevLayerFlags;
+
+enum {
+    GX_ANISO_1=0,
+    GX_ANISO_2=1,
+    GX_ANISO_4=2,
+    GX_MAX_ANISOTROPY=3
+};
+typedef undefined1 GXAnisotropy;
+
+struct GmaTevLayer {
+    GmaTevLayerFlags  flags;
+    u16 tpl_texture_idx; /* Index into TPL for which texture is referenced */
+    u8 lod_bias;
+    GXAnisotropy  anisotropy; /* Level of anisotropic filtering to use */
+    struct GXTexObj * texobj;
+    byte unk_0xC;
+    u8 g_is_swappable_texture; /* Boolean that indicates this texture may be swapped out at runtime. This is used for lap-related textures in F-Zero GX. */
+    s16 tex_descriptor_idx; /* Texture descriptor index, matches its zero-indexed value in this array */
+    u32 field8_0x10;
+    undefined field_0x14[0xc];
+} __attribute__((__packed__));
+static_assert(sizeof(GmaTevLayer) == 0x20);
+
+struct TevBuildCtx {
+    undefined4 field0_0x0;
+    struct GmaMesh * mesh;
+    struct GmaTevLayer * tev_layers;
+    struct TevBuildState build_state;
+} __attribute__((__packed__));
+static_assert(sizeof(TevBuildCtx) == 0x38);
+
+struct GmaMesh {
+    u32 flags;
+    struct GXColor material_color;
+    struct GXColor ambient_color;
+    struct GXColor specular_color;
+    u8 reserved;
+    u8 alpha;
+    u8 tev_layer_count;
+    u8 disp_list_flags; /* bit mask that determines which display lists are present */
+    u8 unk14;
+    undefined padding_0x15[0x1];
+    u16 tev_layer_indices[3]; /* Up to 3 indices into model's tev layer list. -1 means end of list u32 vtx_attrs;            // One bit for each GXAttr vertex attribute */
+    u32 vtx_attrs; /* One bit for each GXAttr vertex attribute */
+    u8 mtx_indices[8]; /* selects which transform matrices are assigned to GX_PNMTX1 through GX_PNMTX9. A value of 0xFF means no matrix is assigned. This is only applicable to models with the GCMF_STITCHING flag */
+    u32 disp_list_sizes[2]; /* size of each display list for GCMF_SKIN or GCMF_EFFECTIVE models, this is instead the length of each index list (number of u32 words) Vec bound_sphere_center; // Reference point for depth sorting */
+    struct Vec bound_sphere_center; /* Reference point for depth sorting */
+    f32 bound_sphere_radius;
+    u32 blend_factors; /* 0xF bitmask for src blend factor, 0xF0 for dst blend factor */
+    u8 padding[28]; /* pad to a multiple of 32 bytes */
+    u8 disp_lists[0]; /* Display list data immediately follows this structure. This is not present in models with the GCMF_SKIN or GCMF_EFFECTIVE flags */
+} __attribute__((__packed__));
+static_assert(sizeof(GmaMesh) == 0x60);
 
 typedef struct Itemgroup Itemgroup, *PItemgroup;
 
@@ -3621,9 +3775,24 @@ static_assert(sizeof(_IO_FILE) == 0x74);
 
 typedef double f64;
 
+enum {
+    __STDC_VERSION__=199900
+};
+typedef undefined4 define___STDC_VERSION__;
+
 #define __WORDSIZE 32
 
 #define __GLIBC_HAVE_LONG_LONG 1
+
+enum {
+    BSD=199103
+};
+typedef undefined4 define_BSD;
+
+enum {
+    _INTEGRAL_MAX_BITS=32
+};
+typedef undefined1 define__INTEGRAL_MAX_BITS;
 
 typedef struct _IO_FILE __FILE;
 
@@ -4282,86 +4451,6 @@ static_assert(sizeof(StagedefColiHeader) == 0x49c);
 typedef void * __gnuc_va_list;
 
 typedef __gnuc_va_list va_list;
-
-typedef struct GmaShape GmaShape, *PGmaShape;
-
-struct GmaShape {
-    uint g_some_bitflag;
-    short g_some_short;
-    short g_some_short2;
-    short g_some_short3;
-    short g_some_short4;
-    byte g_some_flag;
-    byte g_some_flag2;
-    byte g_some_flag3;
-    undefined field_0xf[0x2];
-    byte g_some_flag4;
-    byte g_some_flag5;
-    byte g_some_flag6;
-    undefined field_0x14[0x2];
-    ushort g_some_ushort;
-    undefined field_0x18[0x4];
-    uint g_some_uint4;
-    undefined field_0x20[0x8];
-    int g_some_int;
-    int g_some_int2;
-    undefined field_0x30[0xc];
-    float g_some_float;
-    uint g_some_uint5;
-    undefined field_0x44[0x1c];
-} __attribute__((__packed__));
-static_assert(sizeof(GmaShape) == 0x60);
-
-typedef struct GmaTevLayer GmaTevLayer, *PGmaTevLayer;
-
-enum {
-    TEXFLAG_UNK_BIT0=1,
-    TEXFLAG_UNK_BIT1=2,
-    TEXFLAG_REPEAT_U=4,
-    TEXFLAG_MIRROR_U=8,
-    TEXFLAG_REPEAT_V=16,
-    TEXFLAG_MIRROR_V=32,
-    TEXFLAG_UNK_BIT6=64,
-    TEXFLAG_UNK_BIT7=128,
-    TEXFLAG_ENABLE_MIPMAPS=256,
-    TEXFLAG_UNK_BIT9=512,
-    TEXFLAG_UNK_BIT10=1024,
-    TEXFLAG_G_NEAR=2048,
-    TEXFLAG_G_HEIGHTMAP_BLEND_GRAYSCALE=4096,
-    TEXFLAG_G_ALPHA_MASK=8192,
-    TEXFLAG_UNK_BIT14=16384,
-    TEXFLAG_UNK_BIT15=32768,
-    TEXFLAG_UNK_BIT16=65536,
-    TEXFLAG_ENABLE_UV_SCROLL=131072,
-    TEXFLAG_UNK_BIT18=262144,
-    TEXFLAG_UNK_BIT19=524288,
-    TEXFLAG_UNK_BIT20=1048576,
-    TEXFLAG_UNK_BIT21=2097152,
-    TEXFLAG_UNK_BIT22=4194304,
-    TEXFLAG_UNK_BIT23=8388608
-};
-typedef undefined4 GmaTevLayerFlags;
-
-enum {
-    GX_ANISO_1=0,
-    GX_ANISO_2=1,
-    GX_ANISO_4=2,
-    GX_MAX_ANISOTROPY=3
-};
-typedef undefined1 GXAnisotropy;
-
-struct GmaTevLayer {
-    GmaTevLayerFlags  flags;
-    u16 tpl_texture_idx; /* Index into TPL for which texture is referenced */
-    undefined field_0x6[0x1];
-    GXAnisotropy  anisotropy; /* Level of anisotropic filtering to use */
-    struct GXTexObj * texobj;
-    byte unk_0xC;
-    byte g_is_swappable_texture; /* Boolean that indicates this texture may be swapped out at runtime. This is used for lap-related textures in F-Zero GX. */
-    s16 tex_descriptor_idx; /* Texture descriptor index, matches its zero-indexed value in this array */
-    undefined field_0x10[0x10];
-} __attribute__((__packed__));
-static_assert(sizeof(GmaTevLayer) == 0x20);
 
 typedef struct GmaVertexControlHeader GmaVertexControlHeader, *PGmaVertexControlHeader;
 
@@ -5066,20 +5155,6 @@ enum {
 typedef undefined4 GXTevColorChan;
 
 enum {
-    GX_ITM_OFF=0,
-    GX_ITM_0=1,
-    GX_ITM_1=2,
-    GX_ITM_2=3,
-    GX_ITM_S0=5,
-    GX_ITM_S1=6,
-    GX_ITM_S2=7,
-    GX_ITM_T0=9,
-    GX_ITM_T1=10,
-    GX_ITM_T2=11
-};
-typedef undefined4 GXIndTexMtxID;
-
-enum {
     GX_GM_1_0=0,
     GX_GM_1_7=1,
     GX_GM_2_2=2
@@ -5188,27 +5263,6 @@ enum {
     GX_COPY_INTLC_ODD=3
 };
 typedef undefined4 GXCopyMode;
-
-enum {
-    GX_TEVSTAGE0=0,
-    GX_TEVSTAGE1=1,
-    GX_TEVSTAGE2=2,
-    GX_TEVSTAGE3=3,
-    GX_TEVSTAGE4=4,
-    GX_TEVSTAGE5=5,
-    GX_TEVSTAGE6=6,
-    GX_TEVSTAGE7=7,
-    GX_TEVSTAGE8=8,
-    GX_TEVSTAGE9=9,
-    GX_TEVSTAGE10=10,
-    GX_TEVSTAGE11=11,
-    GX_TEVSTAGE12=12,
-    GX_TEVSTAGE13=13,
-    GX_TEVSTAGE14=14,
-    GX_TEVSTAGE15=15,
-    GX_MAX_TEVSTAGE=16
-};
-typedef undefined4 GXTevStageID;
 
 enum {
     GX_PERF1_TEXELS=0,
@@ -5470,21 +5524,6 @@ typedef undefined4 GXTevMode;
 typedef u32 OSInterruptMask;
 
 enum {
-    GX_TEXMTX0=30,
-    GX_TEXMTX1=33,
-    GX_TEXMTX2=36,
-    GX_TEXMTX3=39,
-    GX_TEXMTX4=42,
-    GX_TEXMTX5=45,
-    GX_TEXMTX6=48,
-    GX_TEXMTX7=51,
-    GX_TEXMTX8=54,
-    GX_TEXMTX9=57,
-    GX_IDENTITY=60
-};
-typedef undefined4 GXTexMtx;
-
-enum {
     GX_PTTEXMTX0=64,
     GX_PTTEXMTX1=67,
     GX_PTTEXMTX2=70,
@@ -5693,6 +5732,11 @@ extern "C" {
     extern f32 projection_near_clip;
     extern f32 projection_far_clip;
     extern Mtx44 g_some_projection_matrix;
+    extern undefined1 avdisp_last_tev_stage_count;
+    extern undefined1 avdisp_last_texgen_count;
+    extern undefined1 avdisp_last_indirect_stage_count;
+    extern undefined4 avdisp_last_post_mult_color_tev_stage;
+    extern undefined4 avdisp_last_post_add_color_tev_stage;
     extern undefined1 g_some_gmaflag_1;
     extern undefined1 g_some_gmaflag_2;
     extern undefined1 g_some_gmaflag_3;
@@ -5784,6 +5828,9 @@ extern "C" {
     extern BOOL32 (* g_some_dvd_open_func_ptr)(char *, struct DVDFileInfo *);
     extern DVDFileInfo * (* g_get_some_dvd_info_func_ptr)(void);
     extern struct GraphicsInfo * graphics_info;
+    extern void (* avdisp_custom_tev_func)(struct TevBuildCtx *);
+    extern undefined4 g_avdisp_light_attn_fn;
+    extern undefined4 g_avdisp_light_mask;
     extern struct GXColor avdisp_post_add_color;
     extern struct GXColor avdisp_post_mult_color;
     extern undefined4 avdisp_use_post_add_color;
@@ -5935,7 +5982,9 @@ extern "C" {
     extern struct GXColor g_some_theme_color;
     extern undefined4 g_something_with_world_theme_2;
     extern undefined4 g_something_with_world_theme_3;
-    extern s32 g_smth_for_drawing;
+    extern void (* stage_models_custom_tev_func)(struct TevBuildCtx *);
+    extern void (* fg_models_custom_tev_func)(struct TevBuildCtx *);
+    extern void (* bg_models_custom_tev_func)(struct TevBuildCtx *);
     extern undefined4 g_maybe_some_bg_effect_func_ptr;
     extern void * * g_some_bg_struct_ptr;
     extern undefined2 g_something_with_world_theme_4;
@@ -6163,7 +6212,7 @@ extern "C" {
     extern undefined4 num_players;
     extern MainGameMode  main_game_mode;
     extern undefined4 curr_player_idx;
-    extern undefined4 mode_number_of_players;
+    extern undefined4 mode_player_count;
     extern undefined2 g_has_started_a_game;
     extern undefined1 g_3player_camera_setting;
     extern bool stage_complete;
@@ -6243,8 +6292,8 @@ extern "C" {
     extern undefined4 active_sprite_draw_req_count;
     extern undefined4 g_smth_with_sprite_draw_reqs_widescreen;
     extern struct TplBuffer * bmp_com_tpl;
-    extern undefined4 g_smth_with_widescreen;
-    extern undefined2 g_global_widescreen_translation_x;
+    extern undefined4 has_last_widescreen_scale;
+    extern undefined2 last_widescreen_scale_pivot_x;
     extern struct SpriteDrawRequest sprite_draw_req_buffer[640];
     extern u32 g_profile_timer_start_times[9];
     extern undefined4 g_something_with_perf_profiling;
@@ -6457,6 +6506,8 @@ extern "C" {
     extern OSHeapHandle g_some_heap_handle;
     extern float g_avdisp_bound_sphere_scale;
     extern float g_avdisp_material_alpha;
+    extern void (* g_avdisp_custom_tev_func_copy)(struct TevBuildCtx *);
+    extern undefined4 g_tex_mtx_selector;
     extern Mtx avdisp_tex_mtx;
     extern struct Component g_main_components[17];
     extern struct Component g_face_components[17];
@@ -6914,7 +6965,7 @@ extern "C" {
     void GXSetTevColorOp_cached(GXTevStageID  stage, GXTevOp  op, GXTevBias  bias, GXTevScale  scale, GXBool clamp, GXTevRegID  out_reg);
     void GXSetTevAlphaOp_cached(GXTevStageID  stage, GXTevOp  op, GXTevBias  bias, GXTevScale  scale, GXBool clamp, GXTevRegID  out_reg);
     void g_GXSetTevColorIn_GXSetTevAlphaIn_wrapper(GXTevStageID  param_1, int param_2);
-    void g_GXSetTevOrder_wrapper(GXTevStageID  param_1, GXTexCoordID  param_2, GXTexCoordID  param_3, GXChannelID  param_4);
+    void GXSetTevOrder_cached(GXTevStageID  param_1, GXTexCoordID  param_2, GXTexCoordID  param_3, GXChannelID  param_4);
     void GXSetTevKColorSel_cached(GXTevStageID  stage, GXTevKColorSel  sel);
     void GXSetTevKAlphaSel_cached(GXTevStageID  stage, GXTevKAlphaSel  sel);
     void GXSetNumTevStages_cached(u8 nStages);
@@ -6936,7 +6987,7 @@ extern "C" {
     void GXSetNumTexGens_cached(u8 nTexGens);
     void GXSetLineWidth_cached(u8 width, GXTexOffset  tex_offsets);
     void GXSetNumChans_cached(u8 nChans);
-    void opti_GXSetChanCtrl(GXChannelID  chan, GXBool enable, GXColorSrc  amb_src, GXColorSrc  mat_src, u32 light_mask, GXDiffuseFn  diff_fn, GXAttnFn  attn_fn);
+    void GXSetChanCtrl_cached(GXChannelID  chan, GXBool enable, GXColorSrc  amb_src, GXColorSrc  mat_src, u32 light_mask, GXDiffuseFn  diff_fn, GXAttnFn  attn_fn);
     void GXSetZMode_cached(GXBool compare_enable, GXCompare  func, GXBool update_enable);
     void g_read_something_from_prev_GX_settings(undefined1 * param_1, undefined4 * param_2, undefined1 * param_3);
     void g_set_some_gx_settings(void);
@@ -8178,36 +8229,41 @@ extern "C" {
     void gx_begin_display_list_wrapper(void * list, u32 size);
     u32 gx_end_display_list_wrapper(void);
     void g_zero_something(void);
-    void g_something_with_GX_vtx_desc(uint param_1);
+    void avdisp_apply_mesh_vtx_attrs(uint param_1);
     void empty_function(void);
-    void load_gx_pos_nrm_mtx(Mtx * mtx, int id);
-    undefined8 g_smth_with_gpu_and_locked_cache_mtx(void);
+    void avdisp_set_pos_nrm_mtx(Mtx * mtx, int id);
+    undefined8 avdisp_set_pos_nrm_mtx_from_mtxa(void);
     void g_something_with_texture_scroll_3(undefined4 param_1, Mtx * param_2);
+    undefined4 g_avdisp_set_custom_tev_func_inner(void (* func)(struct TevBuildCtx *));
     void avdisp_set_post_mult_color(double red, double green, double blue, double alpha);
     void avdisp_set_post_add_color(double red, double green, double blue, double alpha);
     void g_avdisp_set_ambient(double g_red, double g_green, double g_blue);
-    void g_some_GmaSomeStruct_func7(struct GmaShape * gma_struct, GXTevStageID  * param_2);
-    double g_some_GmaSomeStruct_func(struct GmaShape * param_1);
-    double g_avdisp_smth_with_tex_materials(struct GmaModel * gma_header, struct GmaShape * gma_struct);
-    void g_some_GmaSomeStruct_func3(struct GmaShape * shape, int g_some_gma_value);
-    void g_something_with_GmaSomeStruct_GXBlendFactor(struct GmaShape * gma_struct);
-    void g_some_GmaSomeStruct_func5_GXSetChanCtrl(struct GmaShape * gma_struct);
-    void g_some_GmaSomeStruct_func6(struct GmaShape * gma_struct, int param_2);
-    undefined8 g_some_GmaSomeStruct_func5(struct GmaShape * gma_struct);
-    void g_some_GmaSomeStruct_func4(struct GmaShape * param_1);
+    void avdisp_apply_mesh_indirect_tev_config(struct GmaMesh * gma_struct, GXTevStageID  * param_2);
+    double g_some_GmaSomeStruct_func(struct GmaMesh * param_1);
+    double g_avdisp_smth_with_tex_materials(struct GmaModel * gma_header, struct GmaMesh * gma_struct);
+    void avdisp_apply_mesh_material(struct GmaMesh * mesh, struct GmaTevLayer * tev_layers);
+    void avdisp_apply_mesh_blend_mode(struct GmaMesh * mesh);
+    void avdisp_apply_mesh_tev_input_counts(struct TevBuildState * build_state);
+    void avdisp_apply_mesh_tev_config(struct GmaMesh * gma_struct, GXTevStageID  * param_2, struct GmaTevLayer * tev_layers, int param_4);
+    void avdisp_apply_mesh_material_color_src(struct GmaMesh * gma_struct);
+    void avdisp_apply_mesh_material_solid_color(struct GmaMesh * gma_struct, int param_2);
+    undefined8 avdisp_apply_mesh_material_color(struct GmaMesh * mesh);
+    void g_avdisp_apply_mesh_specular_color(struct GmaMesh * mesh);
+    void configure_tev_post_mult_stage(GXTevStageID  tev_stage);
+    void configure_tev_post_add_stage(GXTevStageID  param_1);
     void g_free_some_memory(void);
     Mtx * draw_poly(int param_1, undefined4 * param_2);
     uint pointer_range_advance(byte * g_frame_pointer, int * toset);
     void g_avdisp_draw_model_now1(struct GmaModel * model);
     void g_avdisp_draw_model_now2(struct GmaModel * model);
     void g_avdisp_draw_model_now3(struct GmaModel * model);
-    void g_write_to_gfx_fifos(struct GmaShape * param_1, undefined4 param_2);
-    int * avdisp_draw_deformable_shape(uint * param_1, int param_2, struct GmaShape * gma_struct, int param_4, struct GmaModel * gma_header);
-    undefined8 g_avdisp_smth_with_transforms(struct GmaShape * vert_control);
-    void avdisp_draw_deformable_model(struct GmaModel * model, struct GmaShape * first_shape, int param_3);
-    void g_avdisp_draw_deformable_model2(struct GmaModel * model, struct GmaShape * shape, int param_3, int param_4);
-    GmaShape * avdisp_draw_static_shape_now(struct GmaModel * model, struct GmaShape * shape, struct GmaTevLayer * tev_layers);
-    void g_some_GmaSomeStruct_func2(void * param_1);
+    void g_write_to_gfx_fifos(struct GmaMesh * param_1, undefined4 param_2);
+    int * avdisp_draw_deformable_mesh(uint * param_1, int param_2, struct GmaMesh * mesh, int param_4, struct GmaModel * model);
+    undefined8 g_avdisp_smth_with_transforms(struct GmaMesh * vert_control);
+    void avdisp_draw_deformable_model(struct GmaModel * model, struct GmaMesh * mesh, struct GmaTevLayer * tev_layers);
+    void g_avdisp_draw_deformable_model2(struct GmaModel * model, struct GmaMesh * shape, int param_3, int param_4);
+    GmaMesh * avdisp_draw_static_mesh_now(struct GmaModel * model, struct GmaMesh * mesh, struct GmaTevLayer * tev_layers);
+    void g_avdisp_init_stitching_model_mtxs(void * param_1);
     void g_iteratively_multiply_model_matrices(struct GmaModel * model);
     void g_avdisp_func8(int param_1);
     void g_maybe_something_with_normals(int param_1);
@@ -8970,6 +9026,7 @@ extern "C" {
     void ball_sounds_gameplay(struct Ball * ball);
     G_BallMode * ball_movement_sparks(struct Ball * ball);
     void set_visual_scale(struct Ball * ball);
+    void g_apply_some_custom_material(struct TevBuildCtx * ctx);
     void draw_storysel_ball_clear_half(Mtx * mtx, int lod);
     void g_draw_ball_and_ape(void);
     void draw_ball_shadow(void);
@@ -9284,12 +9341,16 @@ extern "C" {
     void bg_wat_dest(void);
     void bg_wat_disp(void);
     void bg_wat_item_coin_coli(void);
+    void bg_wat_custom_tev_func(struct TevBuildCtx * ctx);
+    void bg_wat_configure_tev(struct TevBuildCtx * ctx);
+    void bg_wat_custom_tev(struct TevBuildCtx * ctx);
     undefined4 g_set_bgwat_bubble_effect(int param_1, uint * param_2);
     void bg_spa_init(void);
     void bg_spa_tick(void);
     void bg_spa_dest(void);
     void bg_spa_disp(void);
     void bg_spa_item_coin_coli(void);
+    void bg_spa_custom_tev(struct TevBuildCtx * ctx);
     void bg_sun_init(void);
     void bg_sun_tick(void);
     void bg_sun_dest(void);
@@ -9315,6 +9376,7 @@ extern "C" {
     void bg_pil_dest(void);
     void bg_pil_disp(void);
     void bg_pil_item_coin_coli(void);
+    void bg_pil_custom_tev(struct TevBuildCtx * ctx);
     void bg_end_init(void);
     void bg_end_tick(void);
     void bg_end_dest(void);
@@ -9325,6 +9387,7 @@ extern "C" {
     void bg_lava_dest(void);
     void bg_lava_disp(void);
     void bg_lava_item_coin_coli(void);
+    void bg_lava_custom_tev(struct TevBuildCtx * ctx);
     void g_draw_lava_particles(int param_1);
     void g_something_with_stage_heap_and_lava_theme(int * param_1);
     void bg_wat2_init(void);
@@ -9334,7 +9397,10 @@ extern "C" {
     void bg_wat2_item_coin_coli(void);
     void empty_function(void);
     void empty_function(void);
-    void wat2_draw_caustics(void * some_pointer);
+    void bg_wat2_init_caustics(void * some_pointer);
+    void bg_wat2_tev_caustics_stage(struct TevBuildCtx * ctx);
+    void bg_wat2_tev_caustics_fg(struct TevBuildCtx * ctx);
+    void bg_wat2_tev_caustics_bg(struct TevBuildCtx * ctx);
     void bg_pil2_init(void);
     void bg_pil2_tick(void);
     void bg_pil2_dest(void);
@@ -9479,8 +9545,8 @@ extern "C" {
     void event_stobj_collision_tick(void);
     void event_stobj_collision_dest(void);
     void event_stobj_collision_child_tick(void);
-    uint g_some_item_collision_check(double ball_scale, double item_scale, struct Vec * ball_prev_pos, struct Vec * ball_pos, struct Vec * item_pos_copy, struct Vec * item_pos);
-    void g_something_with_item_coli(double param_1, double param_2, struct Vec * param_3, struct Vec * param_4, struct Vec * param_5);
+    uint collide_moving_spheres(float radius1, float radius2, struct Vec * prev_pos1, struct Vec * curr_pos1, struct Vec * prev_pos2, struct Vec * curr_pos2);
+    void g_something_with_item_coli(float g_radius1, float g_radius2, struct Vec * g_delta_norm, struct Vec * g_vel1, struct Vec * g_vel2);
     void event_stobj_init(void);
     void event_stobj_tick(void);
     void event_stobj_dest(void);
@@ -9607,8 +9673,8 @@ extern "C" {
     void g_smth_with_screen_fading(void);
     void fade_screen_to_color(uint flags, u32 color, uint frames);
     undefined4 draw_sprite_draw_request(struct SpriteDrawRequest * request);
-    void g_scale_sprite_for_widescreen(uint param_1);
-    void g_reset_sprite_mtx_for_widescreen(void);
+    void set_ui_widescreen_scale_mtx(uint pivot_x);
+    void reset_ui_widescreen_scale_mtx(void);
     void g_something_loading_fonts(void);
     void g_load_specific_font(Font32  font);
     void g_draw_sprite_draw_request_unbuffered(struct SpriteDrawRequest * request);
@@ -9921,7 +9987,7 @@ extern "C" {
     void g_stores_doubles2(double param_1, double param_2, double param_3, double param_4);
     void avdisp_set_fog_params(double param_1, double param_2, undefined1 param_3);
     void avdisp_set_fog_color(u8 r, u8 g, u8 b);
-    void g_yet_another_unk_draw_func(undefined4 param_1);
+    void (* avdisp_set_custom_tev_func(void (* func)(struct TevBuildCtx *)))(struct TevBuildCtx *);
     void g_avdisp_reset_alpha_and_bound_sphere_scale(void);
     DVDFileInfo * g_get_some_dvd_file_info2(void);
     void empty_function(void);

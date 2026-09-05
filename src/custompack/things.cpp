@@ -67,7 +67,7 @@ void draw_shadow_req(ShadowReq* shadow) {
     mkb::mtxa_scale(&shadow->scale);
     mkb::set_post_mult_color(shadow->alpha, shadow->alpha, shadow->alpha, 1.f);
 
-    mkb::load_gx_pos_nrm_mtx(mkb::mtxa, 0);
+    mkb::avdisp_set_pos_nrm_mtx_from_mtxa();
     mkb::avdisp_draw_model_culled_sort_never(shadow->model);
     mkb::set_post_mult_color(1.f, 1.f, 1.f, 1.f);
 
@@ -111,7 +111,7 @@ void draw_base(ThingInst* thing, s16 rot, f32 alpha) {
     mkb::mtxa_rotate_y(thing->conf->rot.y);
     mkb::mtxa_rotate_x(thing->conf->rot.x);
     mkb::mtxa_rotate_y(rot);
-    mkb::load_gx_pos_nrm_mtx(mkb::mtxa, 0);
+    mkb::avdisp_set_pos_nrm_mtx_from_mtxa();
 
     mkb::avdisp_set_alpha(alpha);
     mkb::avdisp_draw_model_culled_sort_auto(s_thing_model);
